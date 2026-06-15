@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkedIn Quick Hub</title>
+<style>
+  :root {
+    --navy: #0B1F2E;
+    --blue: #0A66C2;
+    --green: #057642;
+    --amber: #B6790A;
+    --purple: #5B4B8A;
+    --gold: #F5B700;
+    --bg: #F3F6F8;
+    --card: #FFFFFF;
+    --border: #E0E6EB;
+    --text: #1D2226;
+    --text-muted: #5E6B76;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-hover: 0 6px 16px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    background: var(--navy);
+    color: #fff;
+    padding: 32px 24px;
+    text-align: center;
+  }
+  header h1 { margin: 0; font-size: 26px; letter-spacing: 0.5px; }
+  header p { margin: 8px 0 0; color: #B7C4CE; font-size: 14px; }
+
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 60px; }
+  section { margin-bottom: 40px; }
+  h2 { font-size: 18px; margin: 0 0 4px; }
+  .section-sub { color: var(--text-muted); font-size: 13px; margin: 0 0 16px; }
+
+  .category { margin-bottom: 22px; }
+  .category-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    color: var(--text-muted);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+  }
+  .link-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    box-shadow: var(--shadow);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .link-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+  .link-icon { font-size: 22px; flex-shrink: 0; }
+  .link-title { font-weight: 600; font-size: 14px; display: block; }
+  .link-desc { font-size: 12px; color: var(--text-muted); }
+
+  .cat-updates { --accent: var(--blue); }
+  .cat-network { --accent: var(--green); }
+  .cat-career { --accent: var(--amber); }
+  .cat-account { --accent: var(--purple); }
+
+  .fav-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .fav-form input {
+    flex: 1;
+    min-width: 160px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .fav-form input:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+  .fav-form button {
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .fav-form button:hover { background: #084d92; }
+
+  .fav-list { display: flex; flex-direction: column; gap: 10px; }
+  .fav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    box-shadow: var(--shadow);
+    flex-wrap: wrap;
+  }
+  .fav-star { color: var(--gold); font-size: 18px; }
+  .fav-name { font-weight: 600; flex: 1; min-width: 120px; }
+  .fav-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .fav-btn {
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    border: 1px solid var(--border);
+  }
+  .fav-btn.profile { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .fav-btn.posts { background: var(--green); color: #fff; border-color: var(--green); }
+  .remove-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+  }
+  .remove-btn:hover { color: #c0392b; }
+
+  .empty-state {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    padding: 24px;
+    background: var(--card);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+  }
+
+  footer { text-align: center; font-size: 12px; color: var(--text-muted); padding: 20px; }
+
+  @media (max-width: 600px) {
+    header h1 { font-size: 22px; }
+    .fav-item { flex-direction: column; align-items: flex-start; }
+    .fav-name { width: 100%; }
+    .fav-actions { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <h1>🔗 LinkedIn Quick Hub</h1>
+    <p>One page with shortcuts to LinkedIn and your favorite profiles</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Quick Links</h2>
+      <p class="section-sub">Tap any box below. It will open that part of LinkedIn in a new tab.</p>
+
+      <div class="category">
+        <div class="category-label">Stay Updated</div>
+        <div class="grid">
+          <a class="link-card cat-updates" href="https://www.linkedin.com/feed/" target="_blank" rel="noopener">
+            <span class="link-icon">🏠</span>
+            <span><span class="link-title">Home Feed</span><span class="link-desc">See the latest posts</span></span>
+          </a>
+          <a class="link-card cat-updates" href="https://www.linkedin.com/notifications/" target="_blank" rel="noopener">
+            <span class="link-icon">🔔</span>
+            <span><span class="link-title">Notifications</span><span class="link-desc">Likes, comments and alerts</span></span>
+          </a>
+          <a class="link-card cat-updates" href="https://www.linkedin.com/messaging/" target="_blank" rel="noopener">
+            <span class="link-icon">💬</span>
+            <span><span class="link-title">Messages</span><span class="link-desc">Open your chats</span></span>
+          </a>
+        </div>
+      </div>
+
+      <div class="category">
+        <div class="category-label">Grow Your Network</div>
+        <div class="grid">
+          <a class="link-card cat-network" href="https://www.linkedin.com/mynetwork/" target="_blank" rel="noopener">
+            <span class="link-icon">🤝</span>
+            <span><span class="link-title">My Network</span><span class="link-desc">Connections and requests</span></span>
+          </a>
+          <a class="link-card cat-network" href="https://www.linkedin.com/search/results/people/" target="_blank" rel="noopener">
+            <span class="link-icon">🔍</span>
+            <span><span class="link-title">Search People</span><span class="link-desc">Find someone on LinkedIn</span></span>
+          </a>
+          <a class="link-card cat-network" href="https://www.linkedin.com/groups/" target="_blank" rel="noopener">
+            <span class="link-icon">👥</span>
+            <span><span class="link-title">Groups</span><span class="link-desc">Your LinkedIn groups</span></span>
+          </a>
+        </div>
+      </div>
+
+      <div class="category">
+        <div class="category-label">Career</div>
+        <div class="grid">
+          <a class="link-card cat-career" href="https://www.linkedin.com/jobs/" target="_blank" rel="noopener">
+            <span class="link-icon">💼</span>
+            <span><span class="link-title">Jobs</span><span class="link-desc">Browse job listings</span></span>
+          </a>
+          <a class="link-card cat-career" href="https://www.linkedin.com/learning/" target="_blank" rel="noopener">
+            <span class="link-icon">🎓</span>
+            <span><span class="link-title">Learning</span><span class="link-desc">Courses and tutorials</span></span>
+          </a>
+          <a class="link-card cat-career" href="https://www.linkedin.com/in/me/" target="_blank" rel="noopener">
+            <span class="link-icon">👤</span>
+            <span><span class="link-title">My Profile</span><span class="link-desc">View your own profile</span></span>
+          </a>
+        </div>
+      </div>
+
+      <div class="category">
+        <div class="category-label">Account</div>
+        <div class="grid">
+          <a class="link-card cat-account" href="https://www.linkedin.com/my-items/saved-posts/" target="_blank" rel="noopener">
+            <span class="link-icon">🔖</span>
+            <span><span class="link-title">Saved Items</span><span class="link-desc">Posts and jobs you saved</span></span>
+          </a>
+          <a class="link-card cat-account" href="https://www.linkedin.com/feed/?shareActive=true" target="_blank" rel="noopener">
+            <span class="link-icon">✍️</span>
+            <span><span class="link-title">Create Post</span><span class="link-desc">Share something new</span></span>
+          </a>
+          <a class="link-card cat-account" href="https://www.linkedin.com/psettings/" target="_blank" rel="noopener">
+            <span class="link-icon">⚙️</span>
+            <span><span class="link-title">Settings</span><span class="link-desc">Manage your account</span></span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>⭐ Favorite Profiles</h2>
+      <p class="section-sub">Add people you check often. "View Posts" takes you straight to their recent posts.</p>
+
+      <div class="fav-form">
+        <input id="fav-name" type="text" placeholder="Name (e.g. John Doe)">
+        <input id="fav-url" type="text" placeholder="LinkedIn profile link or username (e.g. johndoe)">
+        <button onclick="addFavorite()">Add</button>
+      </div>
+
+      <div id="fav-list" class="fav-list"></div>
+    </section>
+  </main>
+
+  <footer>Your favorite profiles are saved automatically on this page.</footer>
+
+<script>
+  let favorites = [];
+  const hasStorage = typeof window.storage !== 'undefined';
+
+  // Turn whatever the user types into a clean LinkedIn profile link
+  function normalizeProfileUrl(input) {
+    let val = input.trim();
+    if (!val) return null;
+
+    if (!/^https?:\/\//i.test(val)) {
+      if (val.toLowerCase().includes('linkedin.com')) {
+        val = 'https://' + val.replace(/^\/+/, '');
+      } else {
+        // Treat it as just a username, e.g. "johndoe"
+        val = val.replace(/^@/, '').replace(/^\/+/, '');
+        val = 'https://www.linkedin.com/in/' + val;
+      }
+    }
+
+    // Remove any trailing slashes
+    val = val.replace(/\/+$/, '');
+    return val;
+  }
+
+  function postsUrlFrom(profileUrl) {
+    return profileUrl + '/recent-activity/all/';
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  async function loadFavorites() {
+    if (!hasStorage) {
+      renderFavorites();
+      return;
+    }
+    try {
+      const result = await window.storage.get('favorites');
+      favorites = result ? JSON.parse(result.value) : [];
+    } catch (e) {
+      favorites = [];
+    }
+    renderFavorites();
+  }
+
+  async function saveFavorites() {
+    if (!hasStorage) return;
+    try {
+      await window.storage.set('favorites', JSON.stringify(favorites));
+    } catch (e) {
+      console.error('Could not save favorites:', e);
+    }
+  }
+
+  function renderFavorites() {
+    const list = document.getElementById('fav-list');
+    if (favorites.length === 0) {
+      list.innerHTML = '<div class="empty-state">No favorite profiles yet. Add one above to get started.</div>';
+      return;
+    }
+    list.innerHTML = favorites.map(fav => `
+      <div class="fav-item">
+        <span class="fav-star">⭐</span>
+        <span class="fav-name">${escapeHtml(fav.name)}</span>
+        <div class="fav-actions">
+          <a class="fav-btn profile" href="${fav.url}" target="_blank" rel="noopener">Open Profile</a>
+          <a class="fav-btn posts" href="${postsUrlFrom(fav.url)}" target="_blank" rel="noopener">View Posts</a>
+          <button class="remove-btn" onclick="removeFavorite('${fav.id}')" title="Remove">✕</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function addFavorite() {
+    const nameInput = document.getElementById('fav-name');
+    const urlInput = document.getElementById('fav-url');
+    const name = nameInput.value.trim();
+    const rawUrl = urlInput.value.trim();
+
+    if (!name || !rawUrl) {
+      alert('Please enter both a name and a LinkedIn profile link or username.');
+      return;
+    }
+
+    const url = normalizeProfileUrl(rawUrl);
+    if (!url) {
+      alert('Please enter a valid LinkedIn profile link or username.');
+      return;
+    }
+
+    favorites.push({ id: Date.now().toString(), name, url });
+    await saveFavorites();
+    renderFavorites();
+
+    nameInput.value = '';
+    urlInput.value = '';
+    nameInput.focus();
+  }
+
+  async function removeFavorite(id) {
+    favorites = favorites.filter(f => f.id !== id);
+    await saveFavorites();
+    renderFavorites();
+  }
+
+  // Allow pressing Enter in either input to add the favorite
+  document.getElementById('fav-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addFavorite();
+  });
+  document.getElementById('fav-url').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addFavorite();
+  });
+
+  loadFavorites();
+</script>
+
+</body>
+</html>
