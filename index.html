@@ -307,15 +307,14 @@
     return profileUrl + '/recent-activity/all/';
   }
 
-  // Build a readable name out of the profile link, e.g.
-  // https://www.linkedin.com/in/john-doe-04b521 -> "John Doe"
+  // Build a readable name out of the profile link
   function deriveNameFromUrl(profileUrl) {
     const match = profileUrl.match(/linkedin\.com\/in\/([^\/?#]+)/i);
     let slug = match ? match[1] : profileUrl;
     try { slug = decodeURIComponent(slug); } catch (e) { /* keep as-is */ }
 
     let parts = slug.split(/[-_]+/).filter(Boolean);
-    // Drop trailing random ID segments LinkedIn often adds (numbers, or short letter+number hashes)
+    // Drop trailing random ID segments LinkedIn often adds
     parts = parts.filter(p => !/^[0-9]+$/.test(p) && !/^[a-z0-9]{6,}$/i.test(p) || /^[a-z]+$/i.test(p));
     if (parts.length === 0) parts = [slug];
 
@@ -335,24 +334,25 @@
     if (el) el.textContent = msg || '';
   }
 
-  // Load from standard browser localStorage
-  async function loadFavorites() {
+  // Standardized load for standard web browsers
+  function loadFavorites() {
     setStatus('Loading your saved profiles...');
     try {
-      const result = localStorage.getItem('favorites');
+      const result = localStorage.getItem('linkedin_quick_hub_favorites');
       favorites = result ? JSON.parse(result) : [];
       setStatus('');
     } catch (e) {
+      // Key probably doesn't exist yet (first time using this page) — that's fine.
       favorites = [];
       setStatus('');
     }
     renderFavorites();
   }
 
-  // Save to standard browser localStorage
-  async function saveFavorites() {
+  // Standardized save for standard web browsers
+  function saveFavorites() {
     try {
-      localStorage.setItem('favorites', JSON.stringify(favorites));
+      localStorage.setItem('linkedin_quick_hub_favorites', JSON.stringify(favorites));
       return true;
     } catch (e) {
       console.error('Could not save favorites:', e);
@@ -380,7 +380,7 @@
     `).join('');
   }
 
-  async function addFavorite() {
+  function addFavorite() {
     const nameInput = document.getElementById('fav-name');
     const urlInput = document.getElementById('fav-url');
     const addBtn = document.getElementById('fav-add-btn');
@@ -405,7 +405,7 @@
     addBtn.disabled = true;
     favorites.push({ id: Date.now().toString(), name, url });
     renderFavorites();
-    const saved = await saveFavorites();
+    const saved = saveFavorites();
     addBtn.disabled = false;
 
     if (saved) {
@@ -415,11 +415,11 @@
     }
   }
 
-  async function removeFavorite(id) {
+  function removeFavorite(id) {
     const previous = favorites;
     favorites = favorites.filter(f => f.id !== id);
     renderFavorites();
-    const saved = await saveFavorites();
+    const saved = saveFavorites();
     if (!saved) {
       // Roll back if the save failed, so the screen matches what's actually stored
       favorites = previous;
