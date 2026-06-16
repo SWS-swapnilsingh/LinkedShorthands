@@ -113,6 +113,7 @@
     cursor: pointer;
   }
   .fav-form button:hover { background: #084d92; }
+  .fav-form button:disabled { background: #9DB8CC; cursor: not-allowed; }
 
   .fav-list { display: flex; flex-direction: column; gap: 10px; }
   .fav-item {
@@ -158,6 +159,13 @@
     background: var(--card);
     border: 1px dashed var(--border);
     border-radius: var(--radius);
+  }
+
+  .status-note {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: -4px 0 16px;
+    min-height: 16px;
   }
 
   footer { text-align: center; font-size: 12px; color: var(--text-muted); padding: 20px; }
@@ -257,13 +265,14 @@
 
     <section>
       <h2>⭐ Favorite Profiles</h2>
-      <p class="section-sub">Add people you check often. "View Posts" takes you straight to their recent posts.</p>
+      <p class="section-sub">Add people you check often. Name is optional — if you leave it blank, it will be taken from the LinkedIn link. "View Posts" takes you straight to their recent posts.</p>
 
       <div class="fav-form">
-        <input id="fav-name" type="text" placeholder="Name (e.g. John Doe)">
+        <input id="fav-name" type="text" placeholder="Name (optional)">
         <input id="fav-url" type="text" placeholder="LinkedIn profile link or username (e.g. johndoe)">
-        <button onclick="addFavorite()">Add</button>
+        <button id="fav-add-btn" onclick="addFavorite()">Add</button>
       </div>
+      <div id="fav-status" class="status-note"></div>
 
       <div id="fav-list" class="fav-list"></div>
     </section>
@@ -273,7 +282,6 @@
 
 <script>
   let favorites = [];
-  const hasStorage = typeof window.storage !== 'undefined';
 
   // Turn whatever the user types into a clean LinkedIn profile link
   function normalizeProfileUrl(input) {
@@ -299,32 +307,64 @@
     return profileUrl + '/recent-activity/all/';
   }
 
+  // Build a readable name out of the profile link, e.g.
+  // https://www.linkedin.com/in/john-doe-04b521 -> "John Doe"
+  function deriveNameFromUrl(profileUrl) {
+    const match = profileUrl.match(/linkedin\.com\/in\/([^\/?#]+)/i);
+    let slug = match ? match[1] : profileUrl;
+    try { slug = decodeURIComponent(slug); } catch (e) { /* keep as-is */ }
+
+    let parts = slug.split(/[-_]+/).filter(Boolean);
+    // Drop trailing random ID segments LinkedIn often adds (numbers, or short letter+number hashes)
+    parts = parts.filter(p => !/^[0-9]+$/.test(p) && !/^[a-z0-9]{6,}$/i.test(p) || /^[a-z]+$/i.test(p));
+    if (parts.length === 0) parts = [slug];
+
+    return parts
+      .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+      .join(' ');
+  }
+
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
   }
 
+  function setStatus(msg) {
+    const el = document.getElementById('fav-status');
+    if (el) el.textContent = msg || '';
+  }
+
+  // Always try window.storage directly instead of caching an "is it available"
+  // flag once at page load — that earlier check could run before the host
+  // page had finished wiring up window.storage, which made saves silently
+  // stop working and look like favorites were "getting removed".
   async function loadFavorites() {
-    if (!hasStorage) {
-      renderFavorites();
-      return;
-    }
+    setStatus('Loading your saved profiles...');
     try {
-      const result = await window.storage.get('favorites');
+      const result = await window.storage.get('favorites', false);
       favorites = result ? JSON.parse(result.value) : [];
+      setStatus('');
     } catch (e) {
+      // Key probably doesn't exist yet (first time using this page) — that's fine.
       favorites = [];
+      setStatus('');
     }
     renderFavorites();
   }
 
   async function saveFavorites() {
-    if (!hasStorage) return;
     try {
-      await window.storage.set('favorites', JSON.stringify(favorites));
+      const result = await window.storage.set('favorites', JSON.stringify(favorites), false);
+      if (!result) {
+        setStatus('Could not save — your changes may not stick after a refresh.');
+        return false;
+      }
+      return true;
     } catch (e) {
       console.error('Could not save favorites:', e);
+      setStatus('Could not save — your changes may not stick after a refresh.');
+      return false;
     }
   }
 
@@ -350,11 +390,12 @@
   async function addFavorite() {
     const nameInput = document.getElementById('fav-name');
     const urlInput = document.getElementById('fav-url');
-    const name = nameInput.value.trim();
+    const addBtn = document.getElementById('fav-add-btn');
+    let name = nameInput.value.trim();
     const rawUrl = urlInput.value.trim();
 
-    if (!name || !rawUrl) {
-      alert('Please enter both a name and a LinkedIn profile link or username.');
+    if (!rawUrl) {
+      alert('Please enter a LinkedIn profile link or username.');
       return;
     }
 
@@ -364,19 +405,33 @@
       return;
     }
 
-    favorites.push({ id: Date.now().toString(), name, url });
-    await saveFavorites();
-    renderFavorites();
+    if (!name) {
+      name = deriveNameFromUrl(url);
+    }
 
-    nameInput.value = '';
-    urlInput.value = '';
-    nameInput.focus();
+    addBtn.disabled = true;
+    favorites.push({ id: Date.now().toString(), name, url });
+    renderFavorites();
+    const saved = await saveFavorites();
+    addBtn.disabled = false;
+
+    if (saved) {
+      nameInput.value = '';
+      urlInput.value = '';
+      nameInput.focus();
+    }
   }
 
   async function removeFavorite(id) {
+    const previous = favorites;
     favorites = favorites.filter(f => f.id !== id);
-    await saveFavorites();
     renderFavorites();
+    const saved = await saveFavorites();
+    if (!saved) {
+      // Roll back if the save failed, so the screen matches what's actually stored
+      favorites = previous;
+      renderFavorites();
+    }
   }
 
   // Allow pressing Enter in either input to add the favorite
