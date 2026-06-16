@@ -315,7 +315,7 @@
     try { slug = decodeURIComponent(slug); } catch (e) { /* keep as-is */ }
 
     let parts = slug.split(/[-_]+/).filter(Boolean);
-    // Drop trailing random ID segments LinkedIn often adds (numbers, or short letter+number hashes)
+    // Drop trailing random ID segments LinkedIn often adds
     parts = parts.filter(p => !/^[0-9]+$/.test(p) && !/^[a-z0-9]{6,}$/i.test(p) || /^[a-z]+$/i.test(p));
     if (parts.length === 0) parts = [slug];
 
@@ -335,31 +335,23 @@
     if (el) el.textContent = msg || '';
   }
 
-  // Always try window.storage directly instead of caching an "is it available"
-  // flag once at page load — that earlier check could run before the host
-  // page had finished wiring up window.storage, which made saves silently
-  // stop working and look like favorites were "getting removed".
-  async function loadFavorites() {
+  // Use the standard browser localStorage API to ensure data persists across refreshes
+  function loadFavorites() {
     setStatus('Loading your saved profiles...');
     try {
-      const result = await window.storage.get('favorites', false);
-      favorites = result ? JSON.parse(result.value) : [];
+      const result = localStorage.getItem('favorites');
+      favorites = result ? JSON.parse(result) : [];
       setStatus('');
     } catch (e) {
-      // Key probably doesn't exist yet (first time using this page) — that's fine.
       favorites = [];
       setStatus('');
     }
     renderFavorites();
   }
 
-  async function saveFavorites() {
+  function saveFavorites() {
     try {
-      const result = await window.storage.set('favorites', JSON.stringify(favorites), false);
-      if (!result) {
-        setStatus('Could not save — your changes may not stick after a refresh.');
-        return false;
-      }
+      localStorage.setItem('favorites', JSON.stringify(favorites));
       return true;
     } catch (e) {
       console.error('Could not save favorites:', e);
@@ -380,70 +372,4 @@
         <span class="fav-name">${escapeHtml(fav.name)}</span>
         <div class="fav-actions">
           <a class="fav-btn profile" href="${fav.url}" target="_blank" rel="noopener">Open Profile</a>
-          <a class="fav-btn posts" href="${postsUrlFrom(fav.url)}" target="_blank" rel="noopener">View Posts</a>
-          <button class="remove-btn" onclick="removeFavorite('${fav.id}')" title="Remove">✕</button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  async function addFavorite() {
-    const nameInput = document.getElementById('fav-name');
-    const urlInput = document.getElementById('fav-url');
-    const addBtn = document.getElementById('fav-add-btn');
-    let name = nameInput.value.trim();
-    const rawUrl = urlInput.value.trim();
-
-    if (!rawUrl) {
-      alert('Please enter a LinkedIn profile link or username.');
-      return;
-    }
-
-    const url = normalizeProfileUrl(rawUrl);
-    if (!url) {
-      alert('Please enter a valid LinkedIn profile link or username.');
-      return;
-    }
-
-    if (!name) {
-      name = deriveNameFromUrl(url);
-    }
-
-    addBtn.disabled = true;
-    favorites.push({ id: Date.now().toString(), name, url });
-    renderFavorites();
-    const saved = await saveFavorites();
-    addBtn.disabled = false;
-
-    if (saved) {
-      nameInput.value = '';
-      urlInput.value = '';
-      nameInput.focus();
-    }
-  }
-
-  async function removeFavorite(id) {
-    const previous = favorites;
-    favorites = favorites.filter(f => f.id !== id);
-    renderFavorites();
-    const saved = await saveFavorites();
-    if (!saved) {
-      // Roll back if the save failed, so the screen matches what's actually stored
-      favorites = previous;
-      renderFavorites();
-    }
-  }
-
-  // Allow pressing Enter in either input to add the favorite
-  document.getElementById('fav-name').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addFavorite();
-  });
-  document.getElementById('fav-url').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addFavorite();
-  });
-
-  loadFavorites();
-</script>
-
-</body>
-</html>
+          <a class="fav-btn posts" href="${postsUrl
